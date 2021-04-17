@@ -138,7 +138,7 @@ The response contains a JSON array of quizzes like the following:
 ]
 ```
 ***The response must not include the answer field, otherwise, any user will be able to find the correct answer for any quiz.***
-If there are no quizzes, the service returns an empty JSON array: [].
+- If there are no quizzes, the service returns an empty JSON array: [].
 
 In both cases, the status code is 200 (OK).
 
@@ -200,3 +200,146 @@ The id field is a generated unique integer identifier for the quiz. Also, the re
 
 If the request JSON does not contain title or text, or they are empty strings (""), then the server should respond with the 400 (Bad request) status code. If the number of options in the quiz is less than 2, the server returns the same status code.
 
+# STAGE 4/6
+
+# Description
+
+At this stage, you will permanently store the data in a database, so that after restarting the service you will not lose all quizzes created by the users. You don't need to change the API of your service at this stage.
+
+We recommend you use the H2 database in the disk-based storage mode (not in-memory).
+
+To start working with it, just add a couple of new dependencies in your build.gradle file:
+```
+dependencies {
+    // ...
+    runtimeOnly 'com.h2database:h2'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // ...
+}
+```
+The first dependency will allow using the H2 database in your application, and the second will allow using Spring Data JPA.
+
+You also need to configure the database inside the ```application.properties``` file. Do not change the database path.
+```
+spring.datasource.url=jdbc:h2:file:../quizdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+spring.jpa.hibernate.ddl-auto=update
+
+spring.h2.console.enabled=true
+spring.h2.console.settings.trace=false
+spring.h2.console.settings.web-allow-others=false
+```
+You can use any tables in your database to complete this stage. The main thing is that when you restart the service, quizzes should not be lost. Our tests will create and get them via the API developed at the previous stages.
+
+# STAGE 5/6
+
+# Description
+
+Your service already has a well-designed API and stores all the quizzes in the database. At this stage, you will improve the service to support users and the authorization process. This will allow you to provide different privileges to the users and understand what do they do in the service.
+
+Here are two operations to be added:
+- register a new user, which accepts an email as the login and a password;
+- deleting a quiz created by the current user.
+All the previously developed operations should not be changed. As before, when creating a new quiz, the service checks the following rules: the fields title and text exist and they are not empty, and the options array has two or more items. If at least one of these conditions is not satisfied, the service returns the 400 (Bad request) status code. As before, server responses for getting quizzes should not include answers for the quizzes.
+
+The main change is the accessibility of these operations. Now, to perform any operations with quizzes (create, solve, get one, get all, delete), the user has to be registered and then authorized via HTTP Basic Auth by sending their email and password for each request. Otherwise, the service returns the 401 (Unauthorized) status code. Thus, the only operation that does not require authorization is the registration.
+
+# Register a user
+
+To register a new user, the client needs to send a JSON with email and password via ```POST``` request to ```/api/register```:
+```
+{
+  "email": "test@gmail.com",
+  "password": "secret"
+}
+```
+The service returns 200 (OK) status code if the registration has been completed successfully.
+
+If the email is already taken by another user, the service will return the 400 (Bad request) status code.
+
+Here are some additional restrictions to the format of user credentials:
+- the email must have a valid format (with @ and .);
+- the password must have at least five characters.
+If any of them is not satisfied, the service will also return the 400 (Bad request) status code.
+
+All the following operations need a registered user to be successfully completed.
+
+# Delete a quiz
+
+A user can delete their quiz by sending the ```DELETE``` request to ```/api/quizzes/{id}```.
+
+If the operation was successful, the service returns the 204 (No content) status code without any content.
+
+If the specified quiz does not exist, the server returns 404 (Not found). If the specified user is not the author of this quiz, the response is the 403 (Forbidden) status code.
+
+# STAGE 6/6
+
+# Description
+
+At this last stage, your service will be improved to perform some trickier requests and return paginated responses. From the client's point of view, only a small part of API will be changed here.
+
+# Get all quizzes with paging (MODIFIED)
+
+To get all existing quizzes in the service, the client sends the ```GET``` request to ```/api/quizzes``` as before. But here is the problem: the number of stored quizzes can be very large since your service is so popular among so many users.
+
+In this regard, your API should return only 10 quizzes at once and supports the ability to specify which portion of quizzes is needed.
+
+The response contains a JSON with quizzes (inside content) and some additional metadata:
+```
+{
+  "totalPages":1,
+  "totalElements":3,
+  "last":true,
+  "first":true,
+  "sort":{ },
+  "number":0,
+  "numberOfElements":3,
+  "size":10,
+  "empty":false,
+  "pageable": { },
+  "content":[
+    {"id":102,"title":"Test 1","text":"Text 1","options":["a","b","c"]},
+    {"id":103,"title":"Test 2","text":"Text 2","options":["a", "b", "c", "d"]},
+    {"id":202,"title":"The Java Logo","text":"What is depicted on the Java logo?",
+     "options":["Robot","Tea leaf","Cup of coffee","Bug"]}
+  ]
+}
+```
+We've simplified JSON a bit, but you can keep it in the same format it is generated by the framework. Our tests will validate only the essential fields.
+
+The API should support the navigation through pages by passing the page parameter ( ```/api/quizzes?page=1```). The first page is 0 since pages start from zero, just like our quizzes.
+
+If there are no quizzes, content is empty []. If the user is authorized, the status code is 200 (OK); otherwise, it's 401 (Unauthorized).
+
+# Get all completions of quizzes with paging (NEW)
+
+Your service must provide a new operation for getting all completions of quizzes for a specified user by sending the ```GET``` request to ```/api/quizzes/completed``` together with the user auth data. All the completions should be sorted from the most recent to the oldest.
+
+A response is separated by pages since the service may return a lot of data. It contains a JSON with quizzes (inside content) and some additional metadata as in the previous operation.
+
+Here is a response example: 
+```
+{
+  "totalPages":1,
+  "totalElements":5,
+  "last":true,
+  "first":true,
+  "empty":false,
+  "content":[
+    {"id":103,"completedAt":"2019-10-29T21:13:53.779542"},
+    {"id":102,"completedAt":"2019-10-29T21:13:52.324993"},
+    {"id":101,"completedAt":"2019-10-29T18:59:58.387267"},
+    {"id":101,"completedAt":"2019-10-29T18:59:55.303268"},
+    {"id":202,"completedAt":"2019-10-29T18:59:54.033801"}
+  ]
+}
+```
+Since it is allowed to solve a quiz multiple times, the response may contain duplicate quizzes, but with the different completion date.
+
+We removed some metadata keys from the response to keep it comprehensible.
+
+If there are no quizzes, content is empty []. If the user is authorized, the status code is 200 (OK); otherwise, it's 401 (Unauthorized).
