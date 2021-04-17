@@ -244,6 +244,7 @@ Your service already has a well-designed API and stores all the quizzes in the d
 Here are two operations to be added:
 - register a new user, which accepts an email as the login and a password;
 - deleting a quiz created by the current user.
+
 All the previously developed operations should not be changed. As before, when creating a new quiz, the service checks the following rules: the fields title and text exist and they are not empty, and the options array has two or more items. If at least one of these conditions is not satisfied, the service returns the 400 (Bad request) status code. As before, server responses for getting quizzes should not include answers for the quizzes.
 
 The main change is the accessibility of these operations. Now, to perform any operations with quizzes (create, solve, get one, get all, delete), the user has to be registered and then authorized via HTTP Basic Auth by sending their email and password for each request. Otherwise, the service returns the 401 (Unauthorized) status code. Thus, the only operation that does not require authorization is the registration.
