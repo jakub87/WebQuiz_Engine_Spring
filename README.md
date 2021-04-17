@@ -52,11 +52,11 @@ To solve the quiz, the client needs to pass the answer parameter using the **POS
 
 The server should return JSON with two fields: success (true or false) and feedback (just a string). There are two possible responses from the server:
 
-* If the passed answer is correct (POST to ```/api/quiz``` with content ```answer=2```):
+- If the passed answer is correct (POST to ```/api/quiz``` with content ```answer=2```):
 ```
 {"success":true,"feedback":"Congratulations, you're right!"}
 ```
-* If the answer is incorrect (e.g., POST to ```/api/quiz``` with content ```answer=1```):
+- If the answer is incorrect (e.g., POST to ```/api/quiz``` with content ```answer=1```):
 ```
 {"success":false,"feedback":"Wrong answer! Please, try again."}
 ```
@@ -148,15 +148,15 @@ To solve the quiz, the client sends a ```POST``` request to ```/api/quizzes/{id}
 
 The service returns a JSON with two fields: success (true or false) and feedback (just a string). There are three possible responses.
 
-#If the passed answer is correct (e.g., ```POST``` to ```/api/quizzes/1/solve``` with content ```answer=2```):
+- If the passed answer is correct (e.g., ```POST``` to ```/api/quizzes/1/solve``` with content ```answer=2```):
 ```
 {"success":true,"feedback":"Congratulations, you're right!"}
 ```
-#If the answer is incorrect (e.g., ```POST``` to ```/api/quizzes/1/solve``` with content ```answer=1```):
+- If the answer is incorrect (e.g., ```POST``` to ```/api/quizzes/1/solve``` with content ```answer=1```):
 ```
 {"success":false,"feedback":"Wrong answer! Please, try again."}
 ```
-#If the specified quiz does not exist, the server returns the 404 (Not found) status code.
+- If the specified quiz does not exist, the server returns the 404 (Not found) status code.
 You can write any other strings in the feedback field, but the names of fields and the true/false values must match this example.
 
 # STAGE 3/6
@@ -170,10 +170,10 @@ At this stage, you should fix this so that the service does not accept incorrect
 # Create a new quiz
 
 To create a new quiz, the client needs to send a JSON as the request's body via ```POST``` to ```/api/quizzes```. The JSON should contain the four fields:
-#title: a string, ***required***;
-#text: a string, ***required***;
-#options: an array of strings, required, should contain at least 2 items;
-#answer: an array of indexes of correct options, optional, since all options can be wrong.
+- title: a string, ***required***;
+- text: a string, ***required***;
+- options: an array of strings, required, should contain at least 2 items;
+- answer: an array of indexes of correct options, optional, since all options can be wrong.
 
 Here is a new JSON quiz as an example:
 
