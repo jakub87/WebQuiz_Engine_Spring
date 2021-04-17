@@ -1,5 +1,6 @@
-# Web_Quiz_Engine_Spring
+# Web_Quiz_Engine_Spring from Hyperskill [Web Quiz Engine](https://hyperskill.org/projects/91)
 Project written in Java and Spring Boot.
+
 
 ## FEATURES (SHORT SUMMARY)
 
@@ -13,7 +14,7 @@ Project written in Java and Spring Boot.
 |Register a new user|POST|/api/register|
 |All completions of quizzess for a specific user|GET|/api/quizzes/completed|
 
-## STAGE 1/6
+# STAGE 1/6
 
 # About
 
@@ -60,3 +61,142 @@ The server should return JSON with two fields: success (true or false) and feedb
 {"success":false,"feedback":"Wrong answer! Please, try again."}
 ```
 You can write any other strings in the feedback field, but the names of the fields and the true/false values must match this example
+
+# STAGE 2/6
+
+# Description
+
+At this stage, you will improve the web service to create, get and solve lots of quizzes, not just a single one. All quizzes should be stored in the service's memory, without an external storage.
+
+The format of requests and responses will be similar to the first stage, but you will make the API more REST-friendly and extendable. Each of the four possible operations is described below.
+
+To complete this stage, you may read about some Jackson serializer properties for ignoring fields. But this is not the only way to solve this stage.
+
+# Create a new quiz
+
+To create a new quiz, the client needs to send a JSON as the request's body via ```POST``` to ```/api/quizzes```. The JSON should contain the four fields: title (a string), text (a string), options (an array of strings) and answer (integer index of the correct option). At this moment, all the keys are optional.
+
+Here is a new JSON quiz as an example:
+
+```
+{
+  "title": "The Java Logo",
+  "text": "What is depicted on the Java logo?",
+  "options": ["Robot","Tea leaf","Cup of coffee","Bug"],
+  "answer": 2
+}
+```
+The answer equals 2 corresponds to the third item from the options array ("Cup of coffee").
+
+The server response is a JSON with four fields: id, title, text and options. Here is an example.
+```
+{
+  "id": 1,
+  "title": "The Java Logo",
+  "text": "What is depicted on the Java logo?",
+  "options": ["Robot","Tea leaf","Cup of coffee","Bug"]
+}
+```
+The id field is a generated unique integer identifier for the quiz. Also, the response may or may not include the answer field depending on your wishes. This is not very important for this operation.
+
+At this moment, it is admissible if a creation request does not contain some quiz data. In the next stages, we will improve the service to avoid some server errors.
+
+# Get a quiz by id
+
+To get a quiz by id, the client sends the ```GET``` request to ```/api/quizzes/{id}```.
+
+Here is a response example:
+```
+{
+  "id": 1,
+  "title": "The Java Logo",
+  "text": "What is depicted on the Java logo?",
+  "options": ["Robot","Tea leaf","Cup of coffee","Bug"]
+}
+```
+If the specified quiz does not exist, the server should return the 404 (Not found) status code.
+
+# Get all quizzes
+
+To get all existing quizzes in the service, the client sends the ```GET``` request to ```/api/quizzes```.
+
+The response contains a JSON array of quizzes like the following:
+```
+[
+  {
+    "id": 1,
+    "title": "The Java Logo",
+    "text": "What is depicted on the Java logo?",
+    "options": ["Robot","Tea leaf","Cup of coffee","Bug"]
+  },
+  {
+    "id": 2,
+    "title": "The Ultimate Question",
+    "text": "What is the answer to the Ultimate Question of Life, the Universe and Everything?",
+    "options": ["Everything goes right","42","2+2=4","11011100"]
+  }
+]
+```
+***The response must not include the answer field, otherwise, any user will be able to find the correct answer for any quiz.***
+If there are no quizzes, the service returns an empty JSON array: [].
+
+In both cases, the status code is 200 (OK).
+
+# Solving a quiz
+
+To solve the quiz, the client sends a ```POST``` request to ```/api/quizzes/{id}/solve``` and passes the answer parameter in the content. This parameter is the index of a chosen option from options array. As before, it starts from zero.
+
+The service returns a JSON with two fields: success (true or false) and feedback (just a string). There are three possible responses.
+
+#If the passed answer is correct (e.g., ```POST``` to ```/api/quizzes/1/solve``` with content ```answer=2```):
+```
+{"success":true,"feedback":"Congratulations, you're right!"}
+```
+#If the answer is incorrect (e.g., ```POST``` to ```/api/quizzes/1/solve``` with content ```answer=1```):
+```
+{"success":false,"feedback":"Wrong answer! Please, try again."}
+```
+#If the specified quiz does not exist, the server returns the 404 (Not found) status code.
+You can write any other strings in the feedback field, but the names of fields and the true/false values must match this example.
+
+# STAGE 3/6
+
+# Description
+
+Currently, your service allows creating new quizzes, but there may be problems if the client didn't provide all the quiz data. In such cases, the service will create an incorrect unsolvable quiz which is very frustrating for those who are trying to solve it.
+
+At this stage, you should fix this so that the service does not accept incorrect quizzes. Another task is to make quizzes more interesting by supporting the arbitrary number of correct options (from zero to all). It means that to solve a quiz, the client needs to send all correct options at once, or zero if all options are wrong.
+
+# Create a new quiz
+
+To create a new quiz, the client needs to send a JSON as the request's body via ```POST``` to ```/api/quizzes```. The JSON should contain the four fields:
+#title: a string, ***required***;
+#text: a string, ***required***;
+#options: an array of strings, required, should contain at least 2 items;
+#answer: an array of indexes of correct options, optional, since all options can be wrong.
+
+Here is a new JSON quiz as an example:
+
+```
+{
+  "title": "Coffee drinks",
+  "text": "Select only coffee drinks.",
+  "options": ["Americano","Tea","Cappuccino","Sprite"],
+  "answer": [0,2]
+}
+```
+The answer equals [0,2] corresponds to the first and the third item from the options array ("Americano" and "Cappuccino").
+
+The server response is a JSON with four fields: id, title, text and options. Here is an example:
+```
+{
+  "id": 1,
+  "title": "Coffee drinks",
+  "text": "Select only coffee drinks.",
+  "options": ["Americano","Tea","Cappuccino","Sprite"]
+}
+```
+The id field is a generated unique integer identifier for the quiz. Also, the response may or may not include the answer field depending on your wishes. This is not very important for this operation.
+
+If the request JSON does not contain title or text, or they are empty strings (""), then the server should respond with the 400 (Bad request) status code. If the number of options in the quiz is less than 2, the server returns the same status code.
+
