@@ -1,4 +1,4 @@
-# Project: Web_Quiz_Engine from Hyperskill [Web Quiz Engine](https://hyperskill.org/projects/91)
+# Project: Web Quiz Engine from Hyperskill [Web Quiz Engine](https://hyperskill.org/projects/91)
 Project written in Java and Spring Boot.
 
 
